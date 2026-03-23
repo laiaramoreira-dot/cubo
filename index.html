@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cubo 3x3 - Linhas Marcadas</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #1a1a1a;
+            overflow: hidden;
+            perspective: 1200px;
+        }
+
+        .scene {
+            width: 300px;
+            height: 300px;
+            user-select: none;
+        }
+
+        .cube-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            cursor: grab;
+        }
+
+        .cube-container:active {
+            cursor: grabbing;
+        }
+
+        .small-cube {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            transform-style: preserve-3d;
+            pointer-events: none;
+        }
+
+        .face {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: #ffffff;
+            /* LINHAS MAIS MARCADAS: Borda preta e mais grossa */
+            border: 3px solid #c7c1c1; 
+            box-sizing: border-box;
+            /* Sombra interna para destacar a profundidade das bordas */
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1); 
+        }
+
+        /* Posicionamento das faces */
+        .front  { transform: translateZ(50px); }
+        .back   { transform: rotateY(180deg) translateZ(50px); }
+        .right  { transform: rotateY(90deg) translateZ(50px); }
+        .left   { transform: rotateY(-90deg) translateZ(50px); }
+        .top    { transform: rotateX(90deg) translateZ(50px); }
+        .bottom { transform: rotateX(-90deg) translateZ(50px); }
+    </style>
+</head>
+<body>
+
+    <div class="scene">
+        <div class="cube-container" id="cube"></div>
+    </div>
+
+    <script>
+        const cubeContainer = document.getElementById('cube');
+        let isDragging = false;
+        let startX, startY;
+        let rotateX = -25;
+        let rotateY = 45;
+        let velocityX = 0;
+        let velocityY = 0;
+
+        // 1. Gerar os 27 cubinhos (espaçamento elegante de 105px)
+        const spacing = 105; 
+
+        for (let x = -1; x <= 1; x++) {
+            for (let y = -1; y <= 1; y++) {
+                for (let z = -1; z <= 1; z++) {
+                    const smallCube = document.createElement('div');
+                    smallCube.className = 'small-cube';
+                    smallCube.style.transform = `translate3d(${x * spacing}px, ${y * spacing}px, ${z * spacing}px)`;
+
+                    ['front', 'back', 'right', 'left', 'top', 'bottom'].forEach(f => {
+                        const face = document.createElement('div');
+                        face.className = `face ${f}`;
+                        smallCube.appendChild(face);
+                    });
+                    cubeContainer.appendChild(smallCube);
+                }
+            }
+        }
+
+        // 2. Animação com inércia (movimento fluido ao interagir)
+        function update() {
+            if (!isDragging) {
+                rotateX += velocityX;
+                rotateY += velocityY;
+                velocityX *= 0.95; // Fricção
+                velocityY *= 0.95;
+            }
+
+            cubeContainer.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+            requestAnimationFrame(update);
+        }
+
+        // 3. Controles de Interação
+        const handleStart = (e) => {
+            isDragging = true;
+            const event = e.touches ? e.touches[0] : e;
+            startX = event.clientX;
+            startY = event.clientY;
+            velocityX = 0;
+            velocityY = 0;
+        };
+
+        const handleMove = (e) => {
+            if (!isDragging) return;
+            const event = e.touches ? e.touches[0] : e;
+            
+            const deltaX = (event.clientX - startX) * 0.4;
+            const deltaY = (event.clientY - startY) * 0.4;
+
+            rotateY += deltaX;
+            rotateX -= deltaY;
+
+            velocityY = deltaX;
+            velocityX = -deltaY;
+
+            startX = event.clientX;
+            startY = event.clientY;
+        };
+
+        const handleEnd = () => { isDragging = false; };
+
+        document.addEventListener('mousedown', handleStart);
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('mouseup', handleEnd);
+        document.addEventListener('touchstart', handleStart);
+        document.addEventListener('touchmove', handleMove, { passive: false });
+        document.addEventListener('touchend', handleEnd);
+
+        update();
+    </script>
+</body>
+</html>
